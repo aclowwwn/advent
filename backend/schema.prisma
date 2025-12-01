@@ -6,3 +6,43 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+model Project {
+  id      String   @id @default(uuid())
+  name    String
+  color   String
+  tasks   Task[]
+}
+
+model Task {
+  id          String           @id @default(uuid())
+  projectId   String
+  title       String
+  date        DateTime
+  startTime   String
+  endTime     String
+  description String?
+  completed   Boolean @default(false)
+
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  checklist     ChecklistItem[]
+  contentIdeas  ContentIdea[]
+}
+
+model ChecklistItem {
+  id        String  @id @default(uuid())
+  taskId    String
+  text      String
+  completed Boolean @default(false)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model ContentIdea {
+  id     String @id @default(uuid())
+  taskId String
+  type   String
+  text   String
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
