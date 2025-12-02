@@ -6,7 +6,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "build": "npm run generate-prisma && tsc",
-    "generate-prisma": "prisma generate --schema=./backend/schema.prisma"
+    "generate-prisma": "prisma generate"
   },
   "dependencies": {
     "cors": "^2.8.5",
