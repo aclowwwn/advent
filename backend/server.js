@@ -10,11 +10,6 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-app.use(express.static("dist"));
-app.get("*", (req, res) => {
-  res.sendFile(__dirname + "/dist/index.html");
-});
-
 // --- PROJECTS ---
 
 app.get('/projects', async (req, res) => {
@@ -160,6 +155,13 @@ app.delete('/events/:id', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+
+app.use(express.static("dist"));
+app.get("*", (req, res) => {
+  res.sendFile(__dirname + "/dist/index.html");
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
