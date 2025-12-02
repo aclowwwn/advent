@@ -1,7 +1,7 @@
 import { Project, CalendarEvent } from '../types';
 
 // TOGGLE THIS TO FALSE TO USE THE REAL BACKEND
-const USE_LOCAL_STORAGE = true;
+const USE_LOCAL_STORAGE = false;
 const API_URL = process.env.VITE_API_URL || 'http://localhost:3001';
 
 // --- LocalStorage Helpers (Legacy/Demo) ---

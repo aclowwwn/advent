@@ -37,7 +37,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, setPro
   };
 
   const handleDeleteProject = async (id: string) => {
-    if(!confirm("Delete this project?")) return;
+    // if(!confirm("Delete this project?")) return;
     try {
       await api.deleteProject(id);
       setProjects(prev => prev.filter((p) => p.id !== id));
