@@ -21,7 +21,7 @@ const App: React.FC = () => {
 
   const [view, setView] = useState<ViewMode>('month');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<CalendarTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,18 +40,18 @@ const App: React.FC = () => {
         ]);
 
         if (loadedProjects.length === 0) {
-           // Initialize default projects if none exist
-           const defaults = [
+          // Initialize default projects if none exist
+          const defaults = [
             { id: '1', name: 'Holiday Baking', color: PRESET_COLORS[0].value },
             { id: '2', name: 'Gift Shopping', color: PRESET_COLORS[1].value },
             { id: '3', name: 'Home Decoration', color: PRESET_COLORS[3].value },
-           ];
-           // We only save these locally if we are in local mode, or we can just set state
-           setProjects(defaults);
-           // Optional: Persist defaults to backend immediately? 
-           // For now, we just set state so the user sees them.
+          ];
+          // We only save these locally if we are in local mode, or we can just set state
+          setProjects(defaults);
+          // Optional: Persist defaults to backend immediately? 
+          // For now, we just set state so the user sees them.
         } else {
-           setProjects(loadedProjects);
+          setProjects(loadedProjects);
         }
         setTasks(loadedTasks);
       } catch (error) {
@@ -71,7 +71,7 @@ const App: React.FC = () => {
   }, []);
 
   // --- Handlers ---
-  
+
   // Projects
   const handleUpdateProjects = async (newProjects: Project[]) => {
     // Determine diff to see if add/delete (simplistic approach)
@@ -91,15 +91,28 @@ const App: React.FC = () => {
     setTasks(prev => [...prev, ...newTasks]);
     // API Call
     for (const task of newTasks) {
+      const jsDate = new Date(task.date);
+      if (Number.isNaN(jsDate.getTime())) {
+        console.error("Invalid date format");
+        return;
+      }
+      task.date = jsDate.toISOString().split('T')[0];
       await api.createTask(task);
     }
   };
 
   const handleUpdateTask = async (updatedTask: CalendarTask) => {
     // Optimistic
+    const jsDate = new Date(updatedTask.date);
+    if (Number.isNaN(jsDate.getTime())) {
+      console.error("Invalid date format");
+      return;
+    }
+    updatedTask.date = jsDate.toISOString().split('T')[0];
+
     setTasks(prev => prev.map(e => e.id === updatedTask.id ? updatedTask : e));
     if (selectedTask && selectedTask.id === updatedTask.id) {
-       setSelectedTask(updatedTask);
+      setSelectedTask(updatedTask);
     }
     // API
     await api.updateTask(updatedTask);
@@ -108,7 +121,7 @@ const App: React.FC = () => {
   const handleMoveTask = async (task: CalendarTask, newDate: Date) => {
     const newDateStr = format(newDate, 'yyyy-MM-dd');
     if (task.date === newDateStr) return;
-    
+
     const updatedTask = { ...task, date: newDateStr };
     handleUpdateTask(updatedTask);
   };
@@ -160,13 +173,13 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
             <div className="lg:col-span-3 space-y-6 hidden lg:block">
-              <ProjectManager 
-                projects={projects} 
+              <ProjectManager
+                projects={projects}
                 setProjects={(val) => {
                   // Intercept setState to call API
                   if (typeof val === 'function') {
@@ -182,20 +195,20 @@ const App: React.FC = () => {
                   } else {
                     setProjects(val);
                   }
-                }} 
+                }}
               />
-              
+
               <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
                 <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Progress</h3>
                 <div className="space-y-4">
                   {projects.map(p => {
                     const pTasks = tasks.filter(e => e.projectId === p.id);
                     const total = pTasks.length;
-                    
+
                     if (total === 0) return null;
 
                     let totalCompletionScore = 0;
-                    
+
                     pTasks.forEach(e => {
                       if (e.completed) {
                         totalCompletionScore += 1;
@@ -215,9 +228,9 @@ const App: React.FC = () => {
                           <span className="text-slate-400">{displayPercent}%</span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                          <div 
-                            className="h-full rounded-full transition-all duration-500" 
-                            style={{ width: `${displayPercent}%`, backgroundColor: p.color }} 
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${displayPercent}%`, backgroundColor: p.color }}
                           />
                         </div>
                       </div>
@@ -230,7 +243,7 @@ const App: React.FC = () => {
 
             <div className="lg:col-span-9 h-[calc(100vh-8rem)]">
               {view === 'month' ? (
-                <Calendar 
+                <Calendar
                   currentDate={currentDate}
                   projects={projects}
                   tasks={tasks}
