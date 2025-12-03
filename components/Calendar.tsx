@@ -21,9 +21,9 @@ interface CalendarProps {
   onTaskMove?: (task: CalendarTask, newDate: Date) => void;
 }
 
-export const Calendar: React.FC<CalendarProps> = ({ 
-  currentDate, 
-  projects, 
+export const Calendar: React.FC<CalendarProps> = ({
+  currentDate,
+  projects,
   tasks,
   onTaskClick,
   onDayClick,
@@ -42,25 +42,25 @@ export const Calendar: React.FC<CalendarProps> = ({
   }, [currentDate]);
 
   const getTasksForDay = (date: Date) => {
-    return tasks.filter(task => isSameDay(parse(task.date, 'yyyy-MM-dd', new Date()), date))
+    return tasks.filter(task => isSameDay(task.date, date))
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   };
 
   const isTimeNow = (task: CalendarTask): boolean => {
     const now = new Date();
-    const taskDate = parse(task.date, 'yyyy-MM-dd', new Date());
-    
+    const taskDate = task.date;
+
     if (!isSameDay(now, taskDate)) return false;
-    
+
     const [startH, startM] = task.startTime.split(':').map(Number);
     const [endH, endM] = task.endTime.split(':').map(Number);
-    
+
     const startTime = new Date(taskDate);
     startTime.setHours(startH, startM, 0);
-    
+
     const endTime = new Date(taskDate);
     endTime.setHours(endH, endM, 0);
-    
+
     return isWithinInterval(now, { start: startTime, end: endTime });
   };
 
@@ -68,7 +68,7 @@ export const Calendar: React.FC<CalendarProps> = ({
     const checklist = task.checklist || [];
     const total = checklist.length;
     const completed = checklist.filter(i => i.completed).length;
-    
+
     // Progress calculation: 
     // If manually marked completed, force 100%. 
     // If no items, assume empty/start state (0%) unless marked completed.
@@ -80,9 +80,9 @@ export const Calendar: React.FC<CalendarProps> = ({
     // 100% -> 1.0 (Full color)
     // Linear interpolation
     const alpha = 0.15 + (progress * 0.85);
-    
+
     const baseColor = project?.color || '#3b82f6';
-    
+
     // Convert hex to RRGGBBAA
     const alphaInt = Math.round(alpha * 255);
     const alphaHex = alphaInt.toString(16).padStart(2, '0');
@@ -121,7 +121,7 @@ export const Calendar: React.FC<CalendarProps> = ({
     setDragOverDate(null);
     const taskId = e.dataTransfer.getData('text/plain');
     const task = tasks.find(ev => ev.id === taskId);
-    
+
     if (task && onTaskMove) {
       onTaskMove(task, date);
     }
@@ -146,7 +146,7 @@ export const Calendar: React.FC<CalendarProps> = ({
           const dayTasks = getTasksForDay(day);
           const dayIso = day.toISOString();
           const isDragTarget = dragOverDate === dayIso;
-          
+
           // Determine which tasks to show (max 3)
           const activeIndex = dayTasks.findIndex(e => isTimeNow(e));
           let displayTasks = dayTasks;
@@ -188,16 +188,16 @@ export const Calendar: React.FC<CalendarProps> = ({
                 <span
                   className={`
                     text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full
-                    ${isToday 
-                      ? 'bg-indigo-600 text-white shadow-md' 
+                    ${isToday
+                      ? 'bg-indigo-600 text-white shadow-md'
                       : isCurrentMonth ? 'text-slate-700' : 'text-slate-400'}
                   `}
                 >
                   {format(day, 'd')}
                 </span>
-                
+
                 {dayTasks.length > 0 && dayTasks.every(e => e.completed) && (
-                   <CheckCircle2 size={14} className="text-green-500 opacity-50" />
+                  <CheckCircle2 size={14} className="text-green-500 opacity-50" />
                 )}
               </div>
 
@@ -207,7 +207,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                   const project = projects.find(p => p.id === task.projectId);
                   const active = isTimeNow(task);
                   const { style } = getTaskStyle(task, project, active);
-                  
+
                   return (
                     <button
                       key={task.id}
@@ -234,7 +234,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                           <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border border-white"></span>
                         </span>
                       )}
-                      
+
                       <div className="flex items-center gap-1 pointer-tasks-none">
                         <span className="flex-1 truncate relative z-10">{task.title}</span>
                       </div>
@@ -244,7 +244,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                     </button>
                   );
                 })}
-                
+
                 {hasMore && (
                   <div className="text-[10px] text-slate-400 text-center font-medium py-0.5 pointer-tasks-none">
                     + {dayTasks.length - displayTasks.length} more

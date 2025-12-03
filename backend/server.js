@@ -157,10 +157,10 @@ app.delete('/tasks/:id', async (req, res) => {
 });
 
 
-app.use(express.static("dist"));
-app.get("*", (req, res) => {
-  res.sendFile(__dirname + "/dist/index.html");
-});
+// app.use(express.static("dist"));
+// app.get("*", (req, res) => {
+//   res.sendFile(__dirname + "/dist/index.html");
+// });
 
 
 app.listen(PORT, () => {
