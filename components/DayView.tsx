@@ -33,8 +33,8 @@ export const DayView: React.FC<DayViewProps> = ({
 
   // Filter tasks for this day
   const dayTasks = useMemo(() => {
-    return tasks.filter(task => 
-      isSameDay(parse(task.date, 'yyyy-MM-dd', new Date()), date)
+    return tasks.filter(task =>
+      isSameDay(task.date, date)
     );
   }, [tasks, date]);
 
@@ -45,7 +45,7 @@ export const DayView: React.FC<DayViewProps> = ({
 
     const now = new Date();
     const isToday = isSameDay(date, now);
-    
+
     if (isToday) {
       const current = dayTasks.find(e => {
         // Use space instead of T to avoid token conflict in format string
@@ -58,7 +58,7 @@ export const DayView: React.FC<DayViewProps> = ({
         return;
       }
     }
-    
+
     // If no current task and no selection, select the first one if available
     if (!selectedTaskId && dayTasks.length > 0) {
       // Optional: select first task of the day?
@@ -66,9 +66,9 @@ export const DayView: React.FC<DayViewProps> = ({
     }
   }, [dayTasks, date, selectedTaskId]);
 
-  const activeTask = useMemo(() => 
-    dayTasks.find(e => e.id === selectedTaskId) || null, 
-  [dayTasks, selectedTaskId]);
+  const activeTask = useMemo(() =>
+    dayTasks.find(e => e.id === selectedTaskId) || null,
+    [dayTasks, selectedTaskId]);
 
   // --- SVG Math Helpers ---
   const VIEW_SIZE = 340;
@@ -102,7 +102,7 @@ export const DayView: React.FC<DayViewProps> = ({
     dayTasks.forEach(task => {
       const [startH, startM] = task.startTime.split(':').map(Number);
       const [endH, endM] = task.endTime.split(':').map(Number);
-      
+
       const startMinutes = startH * 60 + startM;
       const endMinutes = endH * 60 + endM;
       const project = projects.find(p => p.id === task.projectId);
@@ -112,7 +112,7 @@ export const DayView: React.FC<DayViewProps> = ({
         // Calculate angles
         let startDeg = ((startMin / 60) % 12) * 30 + (startMin % 60) * 0.5;
         let endDeg = ((endMin / 60) % 12) * 30 + (endMin % 60) * 0.5;
-        
+
         // Handle wrapping at 12 o'clock position (0 deg)
         if (endDeg < startDeg) endDeg += 360;
 
@@ -160,7 +160,7 @@ export const DayView: React.FC<DayViewProps> = ({
   };
 
   const toggleChecklistItem = (task: CalendarTask, itemId: string) => {
-    const updatedChecklist = task.checklist.map(item => 
+    const updatedChecklist = task.checklist.map(item =>
       item.id === itemId ? { ...item, completed: !item.completed } : item
     );
     onUpdateTask({ ...task, checklist: updatedChecklist });
@@ -186,7 +186,7 @@ export const DayView: React.FC<DayViewProps> = ({
   const activeRingColor = `rgba(${BASE_COLOR_RGB}, 0.15)`; // More visible
   const inactiveRingColor = `rgba(${BASE_COLOR_RGB}, 0.05)`; // Faint
 
-  const amRingColor = !isCurrentPm ? activeRingColor : inactiveRingColor; 
+  const amRingColor = !isCurrentPm ? activeRingColor : inactiveRingColor;
   const pmRingColor = isCurrentPm ? activeRingColor : inactiveRingColor;
 
   // Calculate position for the "12" text
@@ -197,7 +197,7 @@ export const DayView: React.FC<DayViewProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-white z-10">
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={onBack}
             className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600"
           >
@@ -221,13 +221,13 @@ export const DayView: React.FC<DayViewProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center w-full bg-slate-50/50">
-        
+
         {/* Clock Viz */}
         <div className="w-full max-w-[340px] aspect-square relative my-4 flex-shrink-0">
           <svg viewBox={`0 0 ${VIEW_SIZE} ${VIEW_SIZE}`} className="w-full h-full drop-shadow-xl">
             {/* Clock Face Background */}
             <circle cx={CENTER} cy={CENTER} r={CENTER - 10} fill="white" className="shadow-sm" />
-            
+
             {/* Top "12" Marker Only */}
             <text
               x={topTextPos.x}
@@ -248,7 +248,7 @@ export const DayView: React.FC<DayViewProps> = ({
               <g key={`${seg.id}-${idx}`} onClick={() => setSelectedTaskId(seg.id)} className="cursor-pointer hover:opacity-80 transition-opacity">
                 {/* Glow for active */}
                 {seg.isActive && (
-                   <path
+                  <path
                     d={seg.path}
                     fill="none"
                     stroke={seg.color}
@@ -283,20 +283,20 @@ export const DayView: React.FC<DayViewProps> = ({
 
             {/* Clock Hand */}
             <g transform={`rotate(${currentHandDegrees}, ${CENTER}, ${CENTER})`}>
-               {/* Hand Line */}
-               <line x1={CENTER} y1={CENTER} x2={CENTER} y2={CENTER - RADIUS_PM - 10} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
-               {/* Center Dot */}
-               <circle cx={CENTER} cy={CENTER} r="4" fill="#ef4444" />
-               {/* End Dot */}
-               <circle cx={CENTER} cy={CENTER - RADIUS_PM - 10} r="3" fill="#ef4444" />
+              {/* Hand Line */}
+              <line x1={CENTER} y1={CENTER} x2={CENTER} y2={CENTER - RADIUS_PM - 10} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+              {/* Center Dot */}
+              <circle cx={CENTER} cy={CENTER} r="4" fill="#ef4444" />
+              {/* End Dot */}
+              <circle cx={CENTER} cy={CENTER - RADIUS_PM - 10} r="3" fill="#ef4444" />
             </g>
-            
+
             {/* Center Time Label for selected task context (optional) or just decoration */}
-             {activeTask && (
-               <text x={CENTER} y={CENTER + 40} textAnchor="middle" className="text-[10px] fill-slate-400 font-medium">
-                  {activeTask.startTime}
-               </text>
-             )}
+            {activeTask && (
+              <text x={CENTER} y={CENTER + 40} textAnchor="middle" className="text-[10px] fill-slate-400 font-medium">
+                {activeTask.startTime}
+              </text>
+            )}
 
           </svg>
         </div>
@@ -305,59 +305,59 @@ export const DayView: React.FC<DayViewProps> = ({
         <div className="w-full px-4 pb-8 max-w-md">
           {activeTask ? (
             <div className="bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300">
-               {/* Card Header */}
-               <div className="p-4 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
-                 <div>
-                    <span 
-                      className="inline-block px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase tracking-wider mb-1"
-                      style={{ backgroundColor: projects.find(p => p.id === activeTask.projectId)?.color || '#cbd5e1' }}
-                    >
-                      {projects.find(p => p.id === activeTask.projectId)?.name}
-                    </span>
-                    <h3 className="font-bold text-slate-800 leading-tight">{activeTask.title}</h3>
-                    <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
-                      <Clock size={12} />
-                      {activeTask.startTime} - {activeTask.endTime}
+              {/* Card Header */}
+              <div className="p-4 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
+                <div>
+                  <span
+                    className="inline-block px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase tracking-wider mb-1"
+                    style={{ backgroundColor: projects.find(p => p.id === activeTask.projectId)?.color || '#cbd5e1' }}
+                  >
+                    {projects.find(p => p.id === activeTask.projectId)?.name}
+                  </span>
+                  <h3 className="font-bold text-slate-800 leading-tight">{activeTask.title}</h3>
+                  <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
+                    <Clock size={12} />
+                    {activeTask.startTime} - {activeTask.endTime}
+                  </div>
+                </div>
+                <button onClick={() => onTaskClick(activeTask)} className="text-indigo-600 text-xs font-semibold hover:underline">
+                  Edit
+                </button>
+              </div>
+
+              {/* Inline Checklist */}
+              <div className="p-4 space-y-3">
+                <div className="space-y-2">
+                  {activeTask.checklist.map(item => (
+                    <div key={item.id} className="flex items-start gap-3 group cursor-pointer" onClick={() => toggleChecklistItem(activeTask, item.id)}>
+                      <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${item.completed ? 'bg-green-500 border-green-500' : 'border-slate-300 bg-white'}`}>
+                        {item.completed && <CheckSquare size={10} className="text-white" />}
+                      </div>
+                      <span className={`text-sm flex-1 leading-snug ${item.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                        {item.text}
+                      </span>
                     </div>
-                 </div>
-                 <button onClick={() => onTaskClick(activeTask)} className="text-indigo-600 text-xs font-semibold hover:underline">
-                   Edit
-                 </button>
-               </div>
+                  ))}
+                  {activeTask.checklist.length === 0 && (
+                    <p className="text-xs text-slate-400 italic">No items in checklist.</p>
+                  )}
+                </div>
 
-               {/* Inline Checklist */}
-               <div className="p-4 space-y-3">
-                 <div className="space-y-2">
-                   {activeTask.checklist.map(item => (
-                     <div key={item.id} className="flex items-start gap-3 group cursor-pointer" onClick={() => toggleChecklistItem(activeTask, item.id)}>
-                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${item.completed ? 'bg-green-500 border-green-500' : 'border-slate-300 bg-white'}`}>
-                          {item.completed && <CheckSquare size={10} className="text-white" />}
+                {/* Content Ideas Preview */}
+                {activeTask.contentIdeas && activeTask.contentIdeas.length > 0 && (
+                  <div className="pt-3 border-t border-slate-100">
+                    <p className="text-xs font-semibold text-slate-400 uppercase mb-2">Content Ideas</p>
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                      {activeTask.contentIdeas.map(idea => (
+                        <div key={idea.id} className="flex-shrink-0 bg-slate-50 border border-slate-100 rounded-lg p-2 w-24 flex flex-col gap-1 items-center text-center">
+                          {getIconForType(idea.type)}
+                          <span className="text-[10px] text-slate-600 line-clamp-2 leading-tight">{idea.text}</span>
                         </div>
-                        <span className={`text-sm flex-1 leading-snug ${item.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
-                          {item.text}
-                        </span>
-                     </div>
-                   ))}
-                   {activeTask.checklist.length === 0 && (
-                     <p className="text-xs text-slate-400 italic">No items in checklist.</p>
-                   )}
-                 </div>
-
-                 {/* Content Ideas Preview */}
-                 {activeTask.contentIdeas && activeTask.contentIdeas.length > 0 && (
-                   <div className="pt-3 border-t border-slate-100">
-                     <p className="text-xs font-semibold text-slate-400 uppercase mb-2">Content Ideas</p>
-                     <div className="flex gap-2 overflow-x-auto pb-2">
-                       {activeTask.contentIdeas.map(idea => (
-                         <div key={idea.id} className="flex-shrink-0 bg-slate-50 border border-slate-100 rounded-lg p-2 w-24 flex flex-col gap-1 items-center text-center">
-                           {getIconForType(idea.type)}
-                           <span className="text-[10px] text-slate-600 line-clamp-2 leading-tight">{idea.text}</span>
-                         </div>
-                       ))}
-                     </div>
-                   </div>
-                 )}
-               </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="text-center py-8 text-slate-400">
