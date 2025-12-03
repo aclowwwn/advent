@@ -42,27 +42,27 @@ app.delete('/projects/:id', async (req, res) => {
   }
 });
 
-// --- EVENTS ---
+// --- tasks ---
 
-app.get('/events', async (req, res) => {
+app.get('/tasks', async (req, res) => {
   try {
-    const events = await prisma.event.findMany({
+    const tasks = await prisma.task.findMany({
       include: {
         checklist: true,
         contentIdeas: true
       }
     });
-    res.json(events);
+    res.json(tasks);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.post('/events', async (req, res) => {
+app.post('/tasks', async (req, res) => {
   try {
     const { id, projectId, title, date, startTime, endTime, description, checklist, contentIdeas, completed } = req.body;
     
-    const event = await prisma.event.create({
+    const task = await prisma.task.create({
       data: {
         id,
         projectId,
@@ -89,32 +89,32 @@ app.post('/events', async (req, res) => {
       },
       include: { checklist: true, contentIdeas: true }
     });
-    res.json(event);
+    res.json(task);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.put('/events/:id', async (req, res) => {
+app.put('/tasks/:id', async (req, res) => {
   try {
     const { projectId, title, date, startTime, endTime, description, checklist, contentIdeas, completed } = req.body;
-    const eventId = req.params.id;
+    const taskId = req.params.id;
 
-    // Transaction to update event and replace nested items
+    // Transaction to update task and replace nested items
     const result = await prisma.$transaction(async (tx) => {
       // Update basic fields
-      await tx.event.update({
-        where: { id: eventId },
+      await tx.task.update({
+        where: { id: taskId },
         data: { projectId, title, date, startTime, endTime, description, completed }
       });
 
       // Update Checklist (Delete all and recreate - simplest strategy for this scale)
-      await tx.checklistItem.deleteMany({ where: { eventId } });
+      await tx.checklistItem.deleteMany({ where: { taskId } });
       if (checklist && checklist.length > 0) {
         await tx.checklistItem.createMany({
           data: checklist.map(c => ({
             id: c.id,
-            eventId,
+            taskId,
             text: c.text,
             completed: c.completed
           }))
@@ -122,20 +122,20 @@ app.put('/events/:id', async (req, res) => {
       }
 
       // Update Content Ideas
-      await tx.contentIdea.deleteMany({ where: { eventId } });
+      await tx.contentIdea.deleteMany({ where: { taskId } });
       if (contentIdeas && contentIdeas.length > 0) {
         await tx.contentIdea.createMany({
           data: contentIdeas.map(c => ({
             id: c.id,
-            eventId,
+            taskId,
             type: c.type,
             text: c.text
           }))
         });
       }
 
-      return tx.event.findUnique({
-        where: { id: eventId },
+      return tx.task.findUnique({
+        where: { id: taskId },
         include: { checklist: true, contentIdeas: true }
       });
     });
@@ -147,9 +147,9 @@ app.put('/events/:id', async (req, res) => {
   }
 });
 
-app.delete('/events/:id', async (req, res) => {
+app.delete('/tasks/:id', async (req, res) => {
   try {
-    await prisma.event.delete({ where: { id: req.params.id } });
+    await prisma.task.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
