@@ -1,36 +1,36 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Loader2, CalendarPlus } from 'lucide-react';
-import { Project, CalendarEvent } from '../types';
+import { Project, CalendarTask } from '../types';
 import { generateSchedule } from '../services/geminiService';
 
 interface AIPlannerModalProps {
   isOpen: boolean;
   onClose: () => void;
   projects: Project[];
-  onAddEvents: (events: CalendarEvent[]) => void;
+  onAddTasks: (tasks: CalendarTask[]) => void;
 }
 
 export const AIPlannerModal: React.FC<AIPlannerModalProps> = ({
   isOpen,
   onClose,
   projects,
-  onAddEvents,
+  onAddTasks,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedEvents, setGeneratedEvents] = useState<Partial<CalendarEvent>[]>([]);
+  const [generatedTasks, setGeneratedTasks] = useState<Partial<CalendarTask>[]>([]);
 
   if (!isOpen) return null;
 
   const handleGenerate = async () => {
     if (!prompt.trim() || projects.length === 0) return;
     setIsLoading(true);
-    setGeneratedEvents([]);
+    setGeneratedTasks([]);
 
     try {
       const currentYear = new Date().getFullYear();
-      const events = await generateSchedule(projects, prompt, currentYear);
-      setGeneratedEvents(events);
+      const tasks = await generateSchedule(projects, prompt, currentYear);
+      setGeneratedTasks(tasks);
     } catch (error) {
       alert("Failed to generate schedule. Please try again.");
     } finally {
@@ -39,18 +39,18 @@ export const AIPlannerModal: React.FC<AIPlannerModalProps> = ({
   };
 
   const handleConfirm = () => {
-    const fullEvents: CalendarEvent[] = generatedEvents.map(e => ({
+    const fullTasks: CalendarTask[] = generatedTasks.map(e => ({
       ...e,
       id: crypto.randomUUID(),
       completed: false,
       checklist: e.checklist || [],
       contentIdeas: e.contentIdeas || [],
-    } as CalendarEvent));
+    } as CalendarTask));
     
-    onAddEvents(fullEvents);
+    onAddTasks(fullTasks);
     onClose();
     setPrompt('');
-    setGeneratedEvents([]);
+    setGeneratedTasks([]);
   };
 
   return (
@@ -90,14 +90,14 @@ export const AIPlannerModal: React.FC<AIPlannerModalProps> = ({
                 </p>
               </div>
 
-              {generatedEvents.length > 0 && (
+              {generatedTasks.length > 0 && (
                 <div className="space-y-4 animate-in slide-in-from-bottom-4 fade-in">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-slate-800">Suggested Schedule ({generatedEvents.length} events)</h3>
+                    <h3 className="font-semibold text-slate-800">Suggested Schedule ({generatedTasks.length} tasks)</h3>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 max-h-[250px] overflow-y-auto space-y-2">
-                    {generatedEvents.map((event, idx) => {
-                      const project = projects.find(p => p.id === event.projectId);
+                    {generatedTasks.map((task, idx) => {
+                      const project = projects.find(p => p.id === task.projectId);
                       return (
                         <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
                           <div 
@@ -105,14 +105,14 @@ export const AIPlannerModal: React.FC<AIPlannerModalProps> = ({
                             style={{ backgroundColor: project?.color || '#cbd5e1' }}
                           />
                           <div>
-                            <div className="font-medium text-sm text-slate-800">{event.title}</div>
+                            <div className="font-medium text-sm text-slate-800">{task.title}</div>
                             <div className="text-xs text-slate-500">
-                              {event.date} • {event.startTime} - {event.endTime}
+                              {task.date} • {task.startTime} - {task.endTime}
                             </div>
                             <div className="text-xs text-slate-400 mt-1 flex gap-2">
-                               <span>{event.checklist?.length || 0} tasks</span>
+                               <span>{task.checklist?.length || 0} tasks</span>
                                <span>•</span>
-                               <span>{event.contentIdeas?.length || 0} content ideas</span>
+                               <span>{task.contentIdeas?.length || 0} content ideas</span>
                             </div>
                           </div>
                         </div>
@@ -127,10 +127,10 @@ export const AIPlannerModal: React.FC<AIPlannerModalProps> = ({
 
         {/* Footer */}
         <div className="p-6 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
-          {generatedEvents.length > 0 ? (
+          {generatedTasks.length > 0 ? (
             <>
               <button
-                onClick={() => setGeneratedEvents([])}
+                onClick={() => setGeneratedTasks([])}
                 className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors"
               >
                 Discard

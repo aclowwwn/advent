@@ -17,7 +17,7 @@ export interface ContentIdea {
   text: string;
 }
 
-export interface CalendarEvent {
+export interface CalendarTask {
   id: string;
   projectId: string;
   title: string;
@@ -34,7 +34,7 @@ export interface DayCell {
   date: Date;
   isCurrentMonth: boolean;
   isToday: boolean;
-  events: CalendarEvent[];
+  tasks: CalendarTask[];
 }
 
 export const PRESET_COLORS = [

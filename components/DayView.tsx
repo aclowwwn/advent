@@ -4,26 +4,26 @@ import isSameDay from 'date-fns/isSameDay';
 import parse from 'date-fns/parse';
 import isWithinInterval from 'date-fns/isWithinInterval';
 import { ArrowLeft, CheckSquare, Clock, Video, Image as ImageIcon, CircleDashed, CheckCircle2 } from 'lucide-react';
-import { Project, CalendarEvent } from '../types';
+import { Project, CalendarTask } from '../types';
 
 interface DayViewProps {
   date: Date;
   projects: Project[];
-  events: CalendarEvent[];
+  tasks: CalendarTask[];
   onBack: () => void;
-  onEventClick: (event: CalendarEvent) => void;
-  onUpdateEvent: (event: CalendarEvent) => void;
+  onTaskClick: (task: CalendarTask) => void;
+  onUpdateTask: (task: CalendarTask) => void;
 }
 
 export const DayView: React.FC<DayViewProps> = ({
   date,
   projects,
-  events,
+  tasks,
   onBack,
-  onEventClick,
-  onUpdateEvent,
+  onTaskClick,
+  onUpdateTask,
 }) => {
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -31,44 +31,44 @@ export const DayView: React.FC<DayViewProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Filter events for this day
-  const dayEvents = useMemo(() => {
-    return events.filter(event => 
-      isSameDay(parse(event.date, 'yyyy-MM-dd', new Date()), date)
+  // Filter tasks for this day
+  const dayTasks = useMemo(() => {
+    return tasks.filter(task => 
+      isSameDay(parse(task.date, 'yyyy-MM-dd', new Date()), date)
     );
-  }, [events, date]);
+  }, [tasks, date]);
 
-  // Handle default selection: Select current active event ONLY if nothing is selected yet
+  // Handle default selection: Select current active task ONLY if nothing is selected yet
   useEffect(() => {
-    // If we already have a selection that exists in today's events, don't change it.
-    if (selectedEventId && dayEvents.some(e => e.id === selectedEventId)) return;
+    // If we already have a selection that exists in today's tasks, don't change it.
+    if (selectedTaskId && dayTasks.some(e => e.id === selectedTaskId)) return;
 
     const now = new Date();
     const isToday = isSameDay(date, now);
     
     if (isToday) {
-      const current = dayEvents.find(e => {
+      const current = dayTasks.find(e => {
         // Use space instead of T to avoid token conflict in format string
         const start = parse(`${e.date} ${e.startTime}`, 'yyyy-MM-dd HH:mm', new Date());
         const end = parse(`${e.date} ${e.endTime}`, 'yyyy-MM-dd HH:mm', new Date());
         return isWithinInterval(now, { start, end });
       });
       if (current) {
-        setSelectedEventId(current.id);
+        setSelectedTaskId(current.id);
         return;
       }
     }
     
-    // If no current event and no selection, select the first one if available
-    if (!selectedEventId && dayEvents.length > 0) {
-      // Optional: select first event of the day?
-      // setSelectedEventId(dayEvents[0].id);
+    // If no current task and no selection, select the first one if available
+    if (!selectedTaskId && dayTasks.length > 0) {
+      // Optional: select first task of the day?
+      // setSelectedTaskId(dayTasks[0].id);
     }
-  }, [dayEvents, date, selectedEventId]);
+  }, [dayTasks, date, selectedTaskId]);
 
-  const activeEvent = useMemo(() => 
-    dayEvents.find(e => e.id === selectedEventId) || null, 
-  [dayEvents, selectedEventId]);
+  const activeTask = useMemo(() => 
+    dayTasks.find(e => e.id === selectedTaskId) || null, 
+  [dayTasks, selectedTaskId]);
 
   // --- SVG Math Helpers ---
   const VIEW_SIZE = 340;
@@ -95,17 +95,17 @@ export const DayView: React.FC<DayViewProps> = ({
     ].join(" ");
   };
 
-  // Process events into visual segments
-  const eventSegments = useMemo(() => {
+  // Process tasks into visual segments
+  const taskSegments = useMemo(() => {
     const segments: any[] = [];
 
-    dayEvents.forEach(event => {
-      const [startH, startM] = event.startTime.split(':').map(Number);
-      const [endH, endM] = event.endTime.split(':').map(Number);
+    dayTasks.forEach(task => {
+      const [startH, startM] = task.startTime.split(':').map(Number);
+      const [endH, endM] = task.endTime.split(':').map(Number);
       
       const startMinutes = startH * 60 + startM;
       const endMinutes = endH * 60 + endM;
-      const project = projects.find(p => p.id === event.projectId);
+      const project = projects.find(p => p.id === task.projectId);
 
       // Helper to push segment
       const addSegment = (isPm: boolean, startMin: number, endMin: number) => {
@@ -117,15 +117,15 @@ export const DayView: React.FC<DayViewProps> = ({
         if (endDeg < startDeg) endDeg += 360;
 
         segments.push({
-          id: event.id,
-          event,
+          id: task.id,
+          task,
           isPm,
           path: describeArc(CENTER, CENTER, isPm ? RADIUS_PM : RADIUS_AM, startDeg, endDeg),
           color: project?.color || '#cbd5e1',
           isActive: isWithinInterval(currentTime, {
             // Use space separator for safe parsing
-            start: parse(`${event.date} ${event.startTime}`, 'yyyy-MM-dd HH:mm', new Date()),
-            end: parse(`${event.date} ${event.endTime}`, 'yyyy-MM-dd HH:mm', new Date()),
+            start: parse(`${task.date} ${task.startTime}`, 'yyyy-MM-dd HH:mm', new Date()),
+            end: parse(`${task.date} ${task.endTime}`, 'yyyy-MM-dd HH:mm', new Date()),
           }),
           duration: endMin - startMin // Used for sorting z-index
         });
@@ -148,22 +148,22 @@ export const DayView: React.FC<DayViewProps> = ({
     // Sort segments by duration descending (Longest first, Shortest last)
     // This ensures shorter segments are drawn ON TOP of longer ones, making them clickable
     return segments.sort((a, b) => b.duration - a.duration);
-  }, [dayEvents, projects, currentTime]);
+  }, [dayTasks, projects, currentTime]);
 
   // Visual Styling (Opacity based on completion)
-  const getOpacity = (event: CalendarEvent) => {
-    const total = event.checklist.length;
-    const completed = event.checklist.filter(i => i.completed).length;
-    if (event.completed) return 1;
+  const getOpacity = (task: CalendarTask) => {
+    const total = task.checklist.length;
+    const completed = task.checklist.filter(i => i.completed).length;
+    if (task.completed) return 1;
     if (total === 0) return 0.2;
     return 0.2 + (completed / total) * 0.8;
   };
 
-  const toggleChecklistItem = (event: CalendarEvent, itemId: string) => {
-    const updatedChecklist = event.checklist.map(item => 
+  const toggleChecklistItem = (task: CalendarTask, itemId: string) => {
+    const updatedChecklist = task.checklist.map(item => 
       item.id === itemId ? { ...item, completed: !item.completed } : item
     );
-    onUpdateEvent({ ...event, checklist: updatedChecklist });
+    onUpdateTask({ ...task, checklist: updatedChecklist });
   };
 
   const getIconForType = (type: string) => {
@@ -243,9 +243,9 @@ export const DayView: React.FC<DayViewProps> = ({
             <circle cx={CENTER} cy={CENTER} r={RADIUS_PM} fill="none" stroke={pmRingColor} strokeWidth={STROKE_WIDTH} />
             <circle cx={CENTER} cy={CENTER} r={RADIUS_AM} fill="none" stroke={amRingColor} strokeWidth={STROKE_WIDTH} />
 
-            {/* Event Segments */}
-            {eventSegments.map((seg, idx) => (
-              <g key={`${seg.id}-${idx}`} onClick={() => setSelectedEventId(seg.id)} className="cursor-pointer hover:opacity-80 transition-opacity">
+            {/* Task Segments */}
+            {taskSegments.map((seg, idx) => (
+              <g key={`${seg.id}-${idx}`} onClick={() => setSelectedTaskId(seg.id)} className="cursor-pointer hover:opacity-80 transition-opacity">
                 {/* Glow for active */}
                 {seg.isActive && (
                    <path
@@ -264,10 +264,10 @@ export const DayView: React.FC<DayViewProps> = ({
                   stroke={seg.color}
                   strokeWidth={STROKE_WIDTH}
                   strokeLinecap="round"
-                  strokeOpacity={getOpacity(seg.event)}
+                  strokeOpacity={getOpacity(seg.task)}
                 />
                 {/* Border/Highlight for selected */}
-                {seg.id === selectedEventId && (
+                {seg.id === selectedTaskId && (
                   <path
                     d={seg.path}
                     fill="none"
@@ -292,9 +292,9 @@ export const DayView: React.FC<DayViewProps> = ({
             </g>
             
             {/* Center Time Label for selected task context (optional) or just decoration */}
-             {activeEvent && (
+             {activeTask && (
                <text x={CENTER} y={CENTER + 40} textAnchor="middle" className="text-[10px] fill-slate-400 font-medium">
-                  {activeEvent.startTime}
+                  {activeTask.startTime}
                </text>
              )}
 
@@ -303,24 +303,24 @@ export const DayView: React.FC<DayViewProps> = ({
 
         {/* Selected Task Details Card */}
         <div className="w-full px-4 pb-8 max-w-md">
-          {activeEvent ? (
+          {activeTask ? (
             <div className="bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300">
                {/* Card Header */}
                <div className="p-4 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
                  <div>
                     <span 
                       className="inline-block px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase tracking-wider mb-1"
-                      style={{ backgroundColor: projects.find(p => p.id === activeEvent.projectId)?.color || '#cbd5e1' }}
+                      style={{ backgroundColor: projects.find(p => p.id === activeTask.projectId)?.color || '#cbd5e1' }}
                     >
-                      {projects.find(p => p.id === activeEvent.projectId)?.name}
+                      {projects.find(p => p.id === activeTask.projectId)?.name}
                     </span>
-                    <h3 className="font-bold text-slate-800 leading-tight">{activeEvent.title}</h3>
+                    <h3 className="font-bold text-slate-800 leading-tight">{activeTask.title}</h3>
                     <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
                       <Clock size={12} />
-                      {activeEvent.startTime} - {activeEvent.endTime}
+                      {activeTask.startTime} - {activeTask.endTime}
                     </div>
                  </div>
-                 <button onClick={() => onEventClick(activeEvent)} className="text-indigo-600 text-xs font-semibold hover:underline">
+                 <button onClick={() => onTaskClick(activeTask)} className="text-indigo-600 text-xs font-semibold hover:underline">
                    Edit
                  </button>
                </div>
@@ -328,8 +328,8 @@ export const DayView: React.FC<DayViewProps> = ({
                {/* Inline Checklist */}
                <div className="p-4 space-y-3">
                  <div className="space-y-2">
-                   {activeEvent.checklist.map(item => (
-                     <div key={item.id} className="flex items-start gap-3 group cursor-pointer" onClick={() => toggleChecklistItem(activeEvent, item.id)}>
+                   {activeTask.checklist.map(item => (
+                     <div key={item.id} className="flex items-start gap-3 group cursor-pointer" onClick={() => toggleChecklistItem(activeTask, item.id)}>
                         <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${item.completed ? 'bg-green-500 border-green-500' : 'border-slate-300 bg-white'}`}>
                           {item.completed && <CheckSquare size={10} className="text-white" />}
                         </div>
@@ -338,17 +338,17 @@ export const DayView: React.FC<DayViewProps> = ({
                         </span>
                      </div>
                    ))}
-                   {activeEvent.checklist.length === 0 && (
+                   {activeTask.checklist.length === 0 && (
                      <p className="text-xs text-slate-400 italic">No items in checklist.</p>
                    )}
                  </div>
 
                  {/* Content Ideas Preview */}
-                 {activeEvent.contentIdeas && activeEvent.contentIdeas.length > 0 && (
+                 {activeTask.contentIdeas && activeTask.contentIdeas.length > 0 && (
                    <div className="pt-3 border-t border-slate-100">
                      <p className="text-xs font-semibold text-slate-400 uppercase mb-2">Content Ideas</p>
                      <div className="flex gap-2 overflow-x-auto pb-2">
-                       {activeEvent.contentIdeas.map(idea => (
+                       {activeTask.contentIdeas.map(idea => (
                          <div key={idea.id} className="flex-shrink-0 bg-slate-50 border border-slate-100 rounded-lg p-2 w-24 flex flex-col gap-1 items-center text-center">
                            {getIconForType(idea.type)}
                            <span className="text-[10px] text-slate-600 line-clamp-2 leading-tight">{idea.text}</span>

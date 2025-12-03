@@ -9,25 +9,25 @@ import isSameDay from 'date-fns/isSameDay';
 import format from 'date-fns/format';
 import isWithinInterval from 'date-fns/isWithinInterval';
 import parse from 'date-fns/parse';
-import { Project, CalendarEvent } from '../types';
+import { Project, CalendarTask } from '../types';
 import { CheckCircle2 } from 'lucide-react';
 
 interface CalendarProps {
   currentDate: Date;
   projects: Project[];
-  events: CalendarEvent[];
-  onEventClick: (event: CalendarEvent) => void;
+  tasks: CalendarTask[];
+  onTaskClick: (task: CalendarTask) => void;
   onDayClick?: (date: Date) => void;
-  onEventMove?: (event: CalendarEvent, newDate: Date) => void;
+  onTaskMove?: (task: CalendarTask, newDate: Date) => void;
 }
 
 export const Calendar: React.FC<CalendarProps> = ({ 
   currentDate, 
   projects, 
-  events,
-  onEventClick,
+  tasks,
+  onTaskClick,
   onDayClick,
-  onEventMove
+  onTaskMove
 }) => {
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
 
@@ -41,39 +41,39 @@ export const Calendar: React.FC<CalendarProps> = ({
     return eachDayOfInterval({ start: startDate, end: endDate });
   }, [currentDate]);
 
-  const getEventsForDay = (date: Date) => {
-    return events.filter(event => isSameDay(parse(event.date, 'yyyy-MM-dd', new Date()), date))
+  const getTasksForDay = (date: Date) => {
+    return tasks.filter(task => isSameDay(parse(task.date, 'yyyy-MM-dd', new Date()), date))
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   };
 
-  const isTimeNow = (event: CalendarEvent): boolean => {
+  const isTimeNow = (task: CalendarTask): boolean => {
     const now = new Date();
-    const eventDate = parse(event.date, 'yyyy-MM-dd', new Date());
+    const taskDate = parse(task.date, 'yyyy-MM-dd', new Date());
     
-    if (!isSameDay(now, eventDate)) return false;
+    if (!isSameDay(now, taskDate)) return false;
     
-    const [startH, startM] = event.startTime.split(':').map(Number);
-    const [endH, endM] = event.endTime.split(':').map(Number);
+    const [startH, startM] = task.startTime.split(':').map(Number);
+    const [endH, endM] = task.endTime.split(':').map(Number);
     
-    const startTime = new Date(eventDate);
+    const startTime = new Date(taskDate);
     startTime.setHours(startH, startM, 0);
     
-    const endTime = new Date(eventDate);
+    const endTime = new Date(taskDate);
     endTime.setHours(endH, endM, 0);
     
     return isWithinInterval(now, { start: startTime, end: endTime });
   };
 
-  const getEventStyle = (event: CalendarEvent, project: Project | undefined, active: boolean) => {
-    const checklist = event.checklist || [];
+  const getTaskStyle = (task: CalendarTask, project: Project | undefined, active: boolean) => {
+    const checklist = task.checklist || [];
     const total = checklist.length;
     const completed = checklist.filter(i => i.completed).length;
     
     // Progress calculation: 
     // If manually marked completed, force 100%. 
     // If no items, assume empty/start state (0%) unless marked completed.
-    let progress = total === 0 ? (event.completed ? 1 : 0) : completed / total;
-    if (event.completed) progress = 1;
+    let progress = total === 0 ? (task.completed ? 1 : 0) : completed / total;
+    if (task.completed) progress = 1;
 
     // Visual Intensity (Alpha):
     // 0% -> 0.15 (Light but visible)
@@ -104,26 +104,26 @@ export const Calendar: React.FC<CalendarProps> = ({
     };
   };
 
-  const handleDragEnter = (e: React.DragEvent, dateStr: string) => {
-    e.preventDefault();
+  const handleDragEnter = (e: React.DragTask, dateStr: string) => {
+    e.prtaskDefault();
     setDragOverDate(dateStr);
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    // Prevent flickering when dragging over children
+  const handleDragLeave = (e: React.DragTask) => {
+    e.prtaskDefault();
+    // Prtask flickering when dragging over children
     if (e.currentTarget.contains(e.relatedTarget as Node)) return;
     setDragOverDate(null);
   };
 
-  const handleDrop = (e: React.DragEvent, date: Date) => {
-    e.preventDefault();
+  const handleDrop = (e: React.DragTask, date: Date) => {
+    e.prtaskDefault();
     setDragOverDate(null);
-    const eventId = e.dataTransfer.getData('text/plain');
-    const event = events.find(ev => ev.id === eventId);
+    const taskId = e.dataTransfer.getData('text/plain');
+    const task = tasks.find(ev => ev.id === taskId);
     
-    if (event && onEventMove) {
-      onEventMove(event, date);
+    if (task && onTaskMove) {
+      onTaskMove(task, date);
     }
   };
 
@@ -143,29 +143,29 @@ export const Calendar: React.FC<CalendarProps> = ({
         {days.map((day, dayIdx) => {
           const isToday = isSameDay(day, new Date());
           const isCurrentMonth = isSameMonth(day, currentDate);
-          const dayEvents = getEventsForDay(day);
+          const dayTasks = getTasksForDay(day);
           const dayIso = day.toISOString();
           const isDragTarget = dragOverDate === dayIso;
           
-          // Determine which events to show (max 3)
-          const activeIndex = dayEvents.findIndex(e => isTimeNow(e));
-          let displayEvents = dayEvents;
+          // Determine which tasks to show (max 3)
+          const activeIndex = dayTasks.findIndex(e => isTimeNow(e));
+          let displayTasks = dayTasks;
           const maxVisible = 3;
           let hasMore = false;
 
-          if (dayEvents.length > maxVisible) {
+          if (dayTasks.length > maxVisible) {
             hasMore = true;
             if (activeIndex !== -1) {
-              // Try to center active event: 1 before, active, 1 after
+              // Try to center active task: 1 before, active, 1 after
               let start = Math.max(0, activeIndex - 1);
               // Ensure we don't go past the end
-              if (start + maxVisible > dayEvents.length) {
-                start = Math.max(0, dayEvents.length - maxVisible);
+              if (start + maxVisible > dayTasks.length) {
+                start = Math.max(0, dayTasks.length - maxVisible);
               }
-              displayEvents = dayEvents.slice(start, start + maxVisible);
+              displayTasks = dayTasks.slice(start, start + maxVisible);
             } else {
-              // No active event, just show first 3
-              displayEvents = dayEvents.slice(0, maxVisible);
+              // No active task, just show first 3
+              displayTasks = dayTasks.slice(0, maxVisible);
             }
           }
 
@@ -173,7 +173,7 @@ export const Calendar: React.FC<CalendarProps> = ({
             <div
               key={dayIso}
               onClick={() => onDayClick && onDayClick(day)}
-              onDragOver={(e) => e.preventDefault()}
+              onDragOver={(e) => e.prtaskDefault()}
               onDragEnter={(e) => handleDragEnter(e, dayIso)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, day)}
@@ -184,7 +184,7 @@ export const Calendar: React.FC<CalendarProps> = ({
               `}
             >
               {/* Date Number */}
-              <div className="flex justify-between items-start mb-1 pointer-events-none">
+              <div className="flex justify-between items-start mb-1 pointer-tasks-none">
                 <span
                   className={`
                     text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full
@@ -196,58 +196,58 @@ export const Calendar: React.FC<CalendarProps> = ({
                   {format(day, 'd')}
                 </span>
                 
-                {dayEvents.length > 0 && dayEvents.every(e => e.completed) && (
+                {dayTasks.length > 0 && dayTasks.every(e => e.completed) && (
                    <CheckCircle2 size={14} className="text-green-500 opacity-50" />
                 )}
               </div>
 
-              {/* Events List */}
+              {/* Tasks List */}
               <div className="flex-1 flex flex-col gap-1 overflow-hidden">
-                {displayEvents.map((event) => {
-                  const project = projects.find(p => p.id === event.projectId);
-                  const active = isTimeNow(event);
-                  const { style } = getEventStyle(event, project, active);
+                {displayTasks.map((task) => {
+                  const project = projects.find(p => p.id === task.projectId);
+                  const active = isTimeNow(task);
+                  const { style } = getTaskStyle(task, project, active);
                   
                   return (
                     <button
-                      key={event.id}
+                      key={task.id}
                       draggable
                       onDragStart={(e) => {
-                        e.dataTransfer.setData('text/plain', event.id);
+                        e.dataTransfer.setData('text/plain', task.id);
                         e.stopPropagation();
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onEventClick(event);
+                        onTaskClick(task);
                       }}
                       className={`
                         text-left text-xs px-2 py-1.5 rounded-md truncate font-medium transition-all w-full
-                        relative overflow-visible group/event border flex-shrink-0 cursor-grab active:cursor-grabbing
+                        relative overflow-visible group/task border flex-shrink-0 cursor-grab active:cursor-grabbing
                         ${active ? 'shadow-lg ring-1 ring-white/50 z-20' : 'hover:shadow-sm hover:scale-[1.01] hover:z-10'}
                       `}
                       style={style}
                     >
                       {/* Active Indicator Pulse Bubble */}
                       {active && (
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3 z-30 pointer-events-none">
+                        <span className="absolute -top-1 -right-1 flex h-3 w-3 z-30 pointer-tasks-none">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border border-white"></span>
                         </span>
                       )}
                       
-                      <div className="flex items-center gap-1 pointer-events-none">
-                        <span className="flex-1 truncate relative z-10">{event.title}</span>
+                      <div className="flex items-center gap-1 pointer-tasks-none">
+                        <span className="flex-1 truncate relative z-10">{task.title}</span>
                       </div>
-                      <div className="text-[10px] opacity-90 relative z-10 pointer-events-none">
-                        {event.startTime}
+                      <div className="text-[10px] opacity-90 relative z-10 pointer-tasks-none">
+                        {task.startTime}
                       </div>
                     </button>
                   );
                 })}
                 
                 {hasMore && (
-                  <div className="text-[10px] text-slate-400 text-center font-medium py-0.5 pointer-events-none">
-                    + {dayEvents.length - displayEvents.length} more
+                  <div className="text-[10px] text-slate-400 text-center font-medium py-0.5 pointer-tasks-none">
+                    + {dayTasks.length - displayTasks.length} more
                   </div>
                 )}
               </div>

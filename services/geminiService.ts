@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Project, CalendarEvent } from "../types";
+import { Project, CalendarTask } from "../types";
 
 // Initialize Gemini Client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -8,19 +8,19 @@ export const generateSchedule = async (
   projects: Project[],
   userPrompt: string,
   currentYear: number
-): Promise<Partial<CalendarEvent>[]> => {
+): Promise<Partial<CalendarTask>[]> => {
   const model = "gemini-2.5-flash";
 
   const systemInstruction = `
-    You are an expert family event planner and social media content strategist.
+    You are an expert family task planner and social media content strategist.
     The user has a set of projects for December ${currentYear}.
-    Based on their request, generate a list of calendar events.
-    Each event must belong to one of the provided projects.
-    Events should have specific dates in December ${currentYear}.
+    Based on their request, generate a list of calendar tasks.
+    Each task must belong to one of the provided projects.
+    Tasks should have specific dates in December ${currentYear}.
     Time windows should be realistic (e.g., baking takes 2-3 hours).
-    Include a checklist of sub-tasks for each event.
+    Include a checklist of sub-tasks for each task.
     
-    CRITICAL: For each event, you MUST provide exactly 3 social media content ideas:
+    CRITICAL: For each task, you MUST provide exactly 3 social media content ideas:
     1. A 'video' idea (e.g., Reel, TikTok trend)
     2. A 'story' idea (e.g., Behind the scenes, poll)
     3. An 'image' idea (e.g., Aesthetic photo, finished result)
@@ -40,8 +40,8 @@ export const generateSchedule = async (
           items: {
             type: Type.OBJECT,
             properties: {
-              projectId: { type: Type.STRING, description: "The ID of the project this event belongs to" },
-              title: { type: Type.STRING, description: "Short title of the event" },
+              projectId: { type: Type.STRING, description: "The ID of the project this task belongs to" },
+              title: { type: Type.STRING, description: "Short title of the task" },
               date: { type: Type.STRING, description: `Date in YYYY-MM-DD format (must be in December ${currentYear})` },
               startTime: { type: Type.STRING, description: "Start time in HH:mm 24h format" },
               endTime: { type: Type.STRING, description: "End time in HH:mm 24h format" },
@@ -72,7 +72,7 @@ export const generateSchedule = async (
 
     const rawData = JSON.parse(response.text || "[]");
     
-    // Map raw data to partial CalendarEvent structure
+    // Map raw data to partial CalendarTask structure
     return rawData.map((item: any) => ({
       projectId: item.projectId,
       title: item.title,

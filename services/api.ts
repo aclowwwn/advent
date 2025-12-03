@@ -1,4 +1,4 @@
-import { Project, CalendarEvent } from '../types';
+import { Project, CalendarTask } from '../types';
 
 // TOGGLE THIS TO FALSE TO USE THE REAL BACKEND
 const USE_LOCAL_STORAGE = false;
@@ -50,50 +50,50 @@ export const api = {
     await fetch(`${API_URL}/projects/${id}`, { method: 'DELETE' });
   },
 
-  // Events
-  getEvents: async (): Promise<CalendarEvent[]> => {
-    if (USE_LOCAL_STORAGE) return loadLS('familyPlanner_events');
-    const res = await fetch(`${API_URL}/events`);
-    if (!res.ok) throw new Error('Failed to fetch events');
+  // Tasks
+  getTasks: async (): Promise<CalendarTask[]> => {
+    if (USE_LOCAL_STORAGE) return loadLS('familyPlanner_tasks');
+    const res = await fetch(`${API_URL}/tasks`);
+    if (!res.ok) throw new Error('Failed to fetch tasks');
     return res.json();
   },
 
-  createEvent: async (event: CalendarEvent): Promise<CalendarEvent> => {
+  createTask: async (task: CalendarTask): Promise<CalendarTask> => {
     if (USE_LOCAL_STORAGE) {
-      const events = loadLS('familyPlanner_events');
-      const newEvents = [...events, event];
-      saveLS('familyPlanner_events', newEvents);
-      return event;
+      const tasks = loadLS('familyPlanner_tasks');
+      const newTasks = [...tasks, task];
+      saveLS('familyPlanner_tasks', newTasks);
+      return task;
     }
-    const res = await fetch(`${API_URL}/events`, {
+    const res = await fetch(`${API_URL}/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(event),
+      body: JSON.stringify(task),
     });
     return res.json();
   },
 
-  updateEvent: async (event: CalendarEvent): Promise<CalendarEvent> => {
+  updateTask: async (task: CalendarTask): Promise<CalendarTask> => {
     if (USE_LOCAL_STORAGE) {
-      const events = loadLS('familyPlanner_events');
-      const newEvents = events.map((e: CalendarEvent) => e.id === event.id ? event : e);
-      saveLS('familyPlanner_events', newEvents);
-      return event;
+      const tasks = loadLS('familyPlanner_tasks');
+      const newTasks = tasks.map((e: CalendarTask) => e.id === task.id ? task : e);
+      saveLS('familyPlanner_tasks', newTasks);
+      return task;
     }
-    const res = await fetch(`${API_URL}/events/${event.id}`, {
+    const res = await fetch(`${API_URL}/tasks/${task.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(event),
+      body: JSON.stringify(task),
     });
     return res.json();
   },
 
-  deleteEvent: async (id: string): Promise<void> => {
+  deleteTask: async (id: string): Promise<void> => {
     if (USE_LOCAL_STORAGE) {
-      const events = loadLS('familyPlanner_events');
-      saveLS('familyPlanner_events', events.filter((e: CalendarEvent) => e.id !== id));
+      const tasks = loadLS('familyPlanner_tasks');
+      saveLS('familyPlanner_tasks', tasks.filter((e: CalendarTask) => e.id !== id));
       return;
     }
-    await fetch(`${API_URL}/events/${id}`, { method: 'DELETE' });
+    await fetch(`${API_URL}/tasks/${id}`, { method: 'DELETE' });
   }
 };

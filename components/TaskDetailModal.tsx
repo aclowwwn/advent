@@ -1,38 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { X, Clock, CheckSquare, Trash2, Save, Plus, Video, Image as ImageIcon, CircleDashed, GripVertical } from 'lucide-react';
-import { CalendarEvent, Project, ChecklistItem, ContentIdea } from '../types';
+import { CalendarTask, Project, ChecklistItem, ContentIdea } from '../types';
 
 interface TaskDetailModalProps {
-  event: CalendarEvent | null;
+  task: CalendarTask | null;
   project: Project | undefined;
   onClose: () => void;
-  onUpdateEvent: (updatedEvent: CalendarEvent) => void;
-  onDeleteEvent: (eventId: string) => void;
+  onUpdateTask: (updatedTask: CalendarTask) => void;
+  onDeleteTask: (taskId: string) => void;
 }
 
 export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
-  event,
+  task,
   project,
   onClose,
-  onUpdateEvent,
-  onDeleteEvent,
+  onUpdateTask,
+  onDeleteTask,
 }) => {
-  const [formData, setFormData] = useState<CalendarEvent | null>(null);
+  const [formData, setFormData] = useState<CalendarTask | null>(null);
 
   useEffect(() => {
-    setFormData(event);
-  }, [event]);
+    setFormData(task);
+  }, [task]);
 
-  if (!event || !formData) return null;
+  if (!task || !formData) return null;
 
   const handleSave = () => {
     if (formData) {
-      onUpdateEvent(formData);
+      onUpdateTask(formData);
       onClose();
     }
   };
 
-  const updateField = (field: keyof CalendarEvent, value: any) => {
+  const updateField = (field: keyof CalendarTask, value: any) => {
     setFormData(prev => prev ? ({ ...prev, [field]: value }) : null);
   };
 
@@ -187,7 +187,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                       className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-slate-300 shadow-sm checked:border-blue-600 checked:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white"
                     />
                     <svg
-                      className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100"
+                      className="pointer-tasks-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100"
                       width="10"
                       height="10"
                       viewBox="0 0 12 12"
@@ -270,7 +270,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         {/* Footer Actions */}
         <div className="p-4 border-t border-slate-100 bg-slate-50 flex gap-3">
            <button
-            onClick={() => onDeleteEvent(event.id)}
+            onClick={() => onDeleteTask(task.id)}
             className="px-4 py-2 text-red-600 bg-white border border-slate-200 hover:bg-red-50 hover:border-red-100 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
           >
             <Trash2 size={16} />

@@ -4,7 +4,7 @@ import { Calendar } from './components/Calendar';
 import { DayView } from './components/DayView';
 import { AIPlannerModal } from './components/AIPlannerModal';
 import { TaskDetailModal } from './components/TaskDetailModal';
-import { Project, CalendarEvent, PRESET_COLORS } from './types';
+import { Project, CalendarTask, PRESET_COLORS } from './types';
 import { Calendar as CalendarIcon, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { api } from './services/api';
@@ -23,20 +23,20 @@ const App: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   
   const [projects, setProjects] = useState<Project[]>([]);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [tasks, setTasks] = useState<CalendarTask[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [selectedTask, setSelectedTask] = useState<CalendarTask | null>(null);
 
   // --- Initial Data Load ---
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [loadedProjects, loadedEvents] = await Promise.all([
+        const [loadedProjects, loadedTasks] = await Promise.all([
           api.getProjects(),
-          api.getEvents()
+          api.getTasks()
         ]);
 
         if (loadedProjects.length === 0) {
@@ -53,7 +53,7 @@ const App: React.FC = () => {
         } else {
            setProjects(loadedProjects);
         }
-        setEvents(loadedEvents);
+        setTasks(loadedTasks);
       } catch (error) {
         console.error("Failed to load data:", error);
       } finally {
@@ -85,38 +85,38 @@ const App: React.FC = () => {
     setProjects(newProjects);
   };
 
-  // Events
-  const handleAddEvents = async (newEvents: CalendarEvent[]) => {
+  // Tasks
+  const handleAddTasks = async (newTasks: CalendarTask[]) => {
     // Optimistic Update
-    setEvents(prev => [...prev, ...newEvents]);
+    setTasks(prev => [...prev, ...newTasks]);
     // API Call
-    for (const event of newEvents) {
-      await api.createEvent(event);
+    for (const task of newTasks) {
+      await api.createTask(task);
     }
   };
 
-  const handleUpdateEvent = async (updatedEvent: CalendarEvent) => {
+  const handleUpdateTask = async (updatedTask: CalendarTask) => {
     // Optimistic
-    setEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
-    if (selectedEvent && selectedEvent.id === updatedEvent.id) {
-       setSelectedEvent(updatedEvent);
+    setTasks(prev => prev.map(e => e.id === updatedTask.id ? updatedTask : e));
+    if (selectedTask && selectedTask.id === updatedTask.id) {
+       setSelectedTask(updatedTask);
     }
     // API
-    await api.updateEvent(updatedEvent);
+    await api.updateTask(updatedTask);
   };
 
-  const handleMoveEvent = async (event: CalendarEvent, newDate: Date) => {
+  const handleMoveTask = async (task: CalendarTask, newDate: Date) => {
     const newDateStr = format(newDate, 'yyyy-MM-dd');
-    if (event.date === newDateStr) return;
+    if (task.date === newDateStr) return;
     
-    const updatedEvent = { ...event, date: newDateStr };
-    handleUpdateEvent(updatedEvent);
+    const updatedTask = { ...task, date: newDateStr };
+    handleUpdateTask(updatedTask);
   };
 
-  const handleDeleteEvent = async (eventId: string) => {
-    setEvents(prev => prev.filter(e => e.id !== eventId));
-    setSelectedEvent(null);
-    await api.deleteEvent(eventId);
+  const handleDeleteTask = async (taskId: string) => {
+    setTasks(prev => prev.filter(e => e.id !== taskId));
+    setSelectedTask(null);
+    await api.deleteTask(taskId);
   };
 
   const handleDayClick = (date: Date) => {
@@ -124,7 +124,7 @@ const App: React.FC = () => {
     setView('day');
   };
 
-  const currentProject = selectedEvent ? projects.find(p => p.id === selectedEvent.projectId) : undefined;
+  const currentProject = selectedTask ? projects.find(p => p.id === selectedTask.projectId) : undefined;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-12 flex flex-col">
@@ -189,14 +189,14 @@ const App: React.FC = () => {
                 <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Progress</h3>
                 <div className="space-y-4">
                   {projects.map(p => {
-                    const pEvents = events.filter(e => e.projectId === p.id);
-                    const total = pEvents.length;
+                    const pTasks = tasks.filter(e => e.projectId === p.id);
+                    const total = pTasks.length;
                     
                     if (total === 0) return null;
 
                     let totalCompletionScore = 0;
                     
-                    pEvents.forEach(e => {
+                    pTasks.forEach(e => {
                       if (e.completed) {
                         totalCompletionScore += 1;
                       } else if (e.checklist && e.checklist.length > 0) {
@@ -223,7 +223,7 @@ const App: React.FC = () => {
                       </div>
                     );
                   })}
-                  {events.length === 0 && <p className="text-xs text-slate-400">No events scheduled yet.</p>}
+                  {tasks.length === 0 && <p className="text-xs text-slate-400">No tasks scheduled yet.</p>}
                 </div>
               </div>
             </div>
@@ -233,19 +233,19 @@ const App: React.FC = () => {
                 <Calendar 
                   currentDate={currentDate}
                   projects={projects}
-                  events={events}
-                  onEventClick={setSelectedEvent}
+                  tasks={tasks}
+                  onTaskClick={setSelectedTask}
                   onDayClick={handleDayClick}
-                  onEventMove={handleMoveEvent}
+                  onTaskMove={handleMoveTask}
                 />
               ) : (
                 <DayView
                   date={selectedDate}
                   projects={projects}
-                  events={events}
+                  tasks={tasks}
                   onBack={() => setView('month')}
-                  onEventClick={setSelectedEvent}
-                  onUpdateEvent={handleUpdateEvent}
+                  onTaskClick={setSelectedTask}
+                  onUpdateTask={handleUpdateTask}
                 />
               )}
             </div>
@@ -257,15 +257,15 @@ const App: React.FC = () => {
         isOpen={isAIModalOpen}
         onClose={() => setIsAIModalOpen(false)}
         projects={projects}
-        onAddEvents={handleAddEvents}
+        onAddTasks={handleAddTasks}
       />
 
       <TaskDetailModal
-        event={selectedEvent}
+        task={selectedTask}
         project={currentProject}
-        onClose={() => setSelectedEvent(null)}
-        onUpdateEvent={handleUpdateEvent}
-        onDeleteEvent={handleDeleteEvent}
+        onClose={() => setSelectedTask(null)}
+        onUpdateTask={handleUpdateTask}
+        onDeleteTask={handleDeleteTask}
       />
     </div>
   );
