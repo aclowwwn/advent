@@ -96,7 +96,7 @@ const App: React.FC = () => {
         console.error("Invalid date format");
         return;
       }
-      task.date = jsDate.toISOString().split('T')[0];
+      task.date = jsDate;
       await api.createTask(task);
     }
   };
@@ -108,7 +108,7 @@ const App: React.FC = () => {
       console.error("Invalid date format");
       return;
     }
-    updatedTask.date = jsDate.toISOString().split('T')[0];
+    updatedTask.date = jsDate;
 
     setTasks(prev => prev.map(e => e.id === updatedTask.id ? updatedTask : e));
     if (selectedTask && selectedTask.id === updatedTask.id) {
@@ -119,10 +119,7 @@ const App: React.FC = () => {
   };
 
   const handleMoveTask = async (task: CalendarTask, newDate: Date) => {
-    const newDateStr = format(newDate, 'yyyy-MM-dd');
-    if (task.date === newDateStr) return;
-
-    const updatedTask = { ...task, date: newDateStr };
+    const updatedTask = { ...task, date: newDate };
     handleUpdateTask(updatedTask);
   };
 

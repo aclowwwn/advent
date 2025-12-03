@@ -21,7 +21,7 @@ export interface CalendarTask {
   id: string;
   projectId: string;
   title: string;
-  date: string; // ISO Date string YYYY-MM-DD
+  date: Date; // ISO Date string YYYY-MM-DD
   startTime: string; // HH:mm 24h format
   endTime: string; // HH:mm 24h format
   description?: string;
